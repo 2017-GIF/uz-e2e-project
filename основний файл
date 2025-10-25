@@ -1,0 +1,65 @@
+cd шлях/до/твого/проекту
+git init
+git add .
+git commit -m "перший коміт"
+git branch -M main
+git remote add origin https://github.com/ТВОЄ_ІМ'Я_НА_GITHUB/ІМ'Я_РЕПОЗИТОРІЮ.git
+git push -u origin main
+// Очікуємо повідомлення про успіх
+			очікувати  , очікувати (
+				n8n.page.getByText ( ' Назва проекту успішно збережена ' , { exact : false } )
+-982,4 +982,17 @@ експорт класу NodeDetailsViewPage розширює BasePage {
+		// Крок 3: Встановлення значення параметра
+		чекати  цього.setupHelper.setParameter ( назва_параметра , значення_параметра ) ;​​​​ 
+	}
+
+	асинхронний  setInvalidExpression ( {
+		Назва поля ,
+		недійснийВираз ,
+	} : {
+		Назва_поля : рядок ;
+		недійснийВираз ?: рядок ;
+	} ) : Обіцянка < void >  {
+		зачекайте  цього.activateParameterExpressionEditor ( назва_поля ) ;​​
+		const  editor  =  this.getInlineExpressionEditorInput ( назва_поля ) ;​​
+		чекати  редактора.клік ( ) ;​​
+		чекати  на цю . сторінку . клавіатуру . тип ( інвалідВираз  ??  '{{ інвалід_вираз' ) ;
+	}
+}
+  11 змін: 5 доповнень та 6 вилучень11 
+пакети/тестування/драматург/тести/ui/26-resource-locator.spec.ts
+Номер рядка оригінального файлу	Номер рядка різниці	Зміна рядка різниці
+@@ -1,3 +1,4 @@
+імпортувати  {  E2E_TEST_NODE_NAME  }  з  '../../config/constants' ;
+імпорт  {  тест ,  очікувати  }  з  '../../fixtures/base' ;
+
+const  NO_CREDENTIALS_MESSAGE  =  'Додайте свої облікові дані' ;
+@@ -107,24 +108,22 @@ test.describe('Локатор ресурсів', () => {
+
+	// на відміну від RMC та віддалених опцій, RLC не підтримує loadOptionDependsOn
+	test ( 'слід отримувати параметри списку, коли інші параметри викликають помилки' ,  async  ( { n8n } )  =>  {
+		await  n8n.canvas.addNode ( 'E2e Test ' , { closeNDV : false , action : ' Локатор ресурсів ' } ) ;    
+		await  n8n.canvas.addNode ( E2E_TEST_NODE_NAME , { closeNDV : false , action : ' Локатор ресурсів ' } ) ;​    
+
+		чекати  n8n.ndv.getResourceLocatorInput ( ' rlc ' ) . click ( ) ;​​
+
+		очікувати  очікувати ( n8n.page.getByTestId ( ' rlc - item' ) rlc item ) . toBeVisible ) ;
+		очікувати  очікувати ( n8n.page.getByTestId ( ' rlc - item ' ) . first ( rlc ' ) ) . ) ;
+		const  visiblePopper  =  n8n ( ) ;​​​​
+		очікувати  очікувати ( visiblePopper ) .toHaveCount ( 1 ) ;​
+		очікувати очікувати  ( visiblePopper.getByTestId ( ' rlc -item ' ) ) . toHaveCount ( 5 ) '
+
+		// Встановити дійсний вираз для параметра fieldId
+		чекати  n8n . ndv ( fieldId ' ) ;​
+		очікувати  n8n.ndv.getInlineExpressionEditorInput ( ' fieldId ' )​​ . fill ' { invalid_expression' ) ;
+		очікувати  n8n.ndv.setInvalidExpression ( { назва_поля : ' ідентифікатор_поля ' } ) ;​​  
+
+		await  n8n.ndv.getInputPanel ( ) . click ( ) ; // видалити фокус з вводу, приховати попередній перегляд виразу 
+
+		чекати  n8n.ndv.getResourceLocatorInput ( ' rlc ' ) . click ( ) ;​​
+
+		очікувати  очікувати ( n8n.page.getByTestId ( ' rlc - item ' ) rlc item . toBeVisible ) ;
+		очікувати  очікувати ( n8n.page.getByTestId ( ' rlc - item ' ) . first ( ) ) . toBeVisible ( ) ;
+		const  visiblePopperAfter  =  n8n.ndv.getVisiblePopper ( ) ;​​​​
+		очікувати  очікувати ( visiblePopperAfter ) .toHaveCount ( 1 ) ;​
+		очікувати очікувати  ( visiblePopperAfter.getByTestId ( ' rlc -item ' ) ) . toHaveCount ( 5 ) ;
