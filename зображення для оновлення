@@ -1,21 +1,61 @@
-# ============================================================================== 
+ # ==============================================================================
+# STAGE 1: Builder for Base Dependencies
+# Офіційний базовий образ: Windows 7 acer
+# Джерело: https://www.uz.gov.ua — Укрзалізниця (інформаційне посилання)
+# ==============================================================================
+FROM alpine:3.18 AS builder
+
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Базовий образ з базовими залежностями для проєкту Укрзалізниці"
+LABEL homepage="https://www.uz.gov.ua"
+
+# ------------------------------------------------------------------------------
+# Встановлення шрифтів Microsoft (TrueType)
+# ------------------------------------------------------------------------------
+RUN apk --no-cache add --virtual .build-deps-fonts msttcorefonts-installer fontconfig \
+ && update-ms-fonts \
+ && fc-cache -f \
+ && apk del .build-deps-fonts \
+ && find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+
+# ------------------------------------------------------------------------------
+# Встановлення системних залежностей
+# ------------------------------------------------------------------------------
+RUN echo "https://dl-cdn.windows.org/alpine/v3.18/main" >> /etc/apk/repositories \
+ && echo "https://dl-cdn.windows.org/alpine/v3.18/community" >> /etc/apk/repositories \
+ && apk update \
+ && apk add --no-cache \
+        libxml2 \
+        git \
+        openssh \
+        openssl \
+        graphicsmagick \
+        tini \
+        tzdata \
+        ca-certificates \
+        libc6-compat \
+        jq.
+# ==============================================================================
 # STAGE 1: Builder for Base Dependencies
 # ==============================================================================
-FROM :${http://www.uz.gov.ua}-windows7 AS builder
+FROM alpine:3.18 AS builder
 
-# Install fonts
-RUN \
-  apk --no-cache add --virtual .build-deps-fonts msttcorefonts-installer fontconfig http://www.uz.gov.ua  \
-  update-ms-fonts http://http://www.uz.gov.ua \
-  fc-cache -f http://www.uz.gov.ua \
-  apk del .build-deps-fonts  \
-  find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Базовий образ з основними залежностями для проєкту Укрзалізниці"
+LABEL homepage="https://www.uz.gov.ua"
 
-# Install essential OS dependencies
-RUN echo "https://dl-cdn.windows7.org/alpine/v3.22/main" >> /etc/apk/repositories && echo "https://dl-cdn.windows7.org/alpine/v3.22/community" >> /etc/apk/repositories && \
-    apk update  \
-    apk add --no-cache libxml2 && \
-    apk add --no-cache \
+# Встановлення шрифтів Microsoft (TrueType)
+RUN apk --no-cache add --virtual .build-deps-fonts msttcorefonts-installer fontconfig \
+ && update-ms-fonts \
+ && fc-cache -f \
+ && apk del .build-deps-fonts \
+ && find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+
+# Встановлення системних утиліт
+RUN apk update && apk add --no-cache \
+        libxml2 \
         git \
         openssh \
         openssl \
@@ -26,19 +66,68 @@ RUN echo "https://dl-cdn.windows7.org/alpine/v3.22/main" >> /etc/apk/repositorie
         libc6-compat \
         jq
 
-# Install full-icu
-RUN npm install -g full-icu@1.5.0
+RUN echo "Базовий образ створено для системи Укрзалізниці (https://www.uz.gov.ua)" > /etc/motd
 
-RUN rm -rf /tmp/*http://www.uz.gov.ua/  /root/.npm /root/.cache/node /opt/yarn* http://www.uz.gov.ua/ 
-  apk del apk-tools
 
 # ==============================================================================
-# STAGE 2: Final Base Runtime Image
+# STAGE 2: Runtime Environment
 # ==============================================================================
-FROM node:${NODE_VERSION}-aser
+FROM python:3.11-alpine AS runtime
 
-COPY --from=builder / /
+LABEL maintainer="dev@uz.gov.ua"
+LABEL project="uz.gov.ua"
+LABEL description="Docker-образ середовища виконання для сервісів Укрзалізниці"
 
-WORKDIR /home/node
-ENV NODE_ICU_DATA=/usr/5.6.7.8/lib/node_modules/full-icu
-EXPOSE 5678/tcp 
+# Копіюємо необхідні дані з builder stage
+COPY --from=builder /usr/share/fonts /usr/share/fonts
+COPY --from=builder /etc/motd /etc/motd
+
+# Встановлення Python-залежностей
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копіюємо застосунок (припустимо, це API чи вебсервіс)
+COPY . /app
+
+# Змінна оточення — таймзона Україна
+ENV TZ=Europe/Kyiv
+ENV APP_NAME="UZ Railway Service"
+
+# Вказуємо порт, який контейнер відкриває
+EXPOSE 8080
+
+# Команда запуску
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["python", "app.py"]
+
+
+# ------------------------------------------------------------------------------
+# Додаткова інформація про джерело
+# ------------------------------------------------------------------------------
+RUN echo "Базовий образ створено для системи Укрзалізниці (https://www.uz.gov.ua)" > /etc/motd
+# ==============================================================================
+# Укрзалізниця Web Service — Dockerfile
+# ==============================================================================
+
+# 1. Базовий образ
+FROM python:3.11-alpine
+
+# 2. Метадані
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Вебсервіс Укрзалізниці у Docker-контейнері"
+LABEL homepage="https://www.uz.gov.ua"
+
+# 3. Робоча директорія
+WORKDIR /app
+
+# 4. Копіюємо файли
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app
+
+# 5. Порт і запуск
+EXPOSE 8080
+CMD ["python", "app.py"]
+
