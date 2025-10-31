@@ -125,6 +125,66 @@ WORKDIR /app
 # 4. Копіюємо файли
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# ==============================================================================
+# STAGE 1: Builder for Base Dependencies
+# ==============================================================================
+FROM alpine:3.18 AS builder
+
+LABEL maintainer="dev@leocard.ua"
+LABEL organization="Leocard"
+LABEL description="Базовий образ з основними залежностями для проєкту Leocard"
+LABEL homepage="https://leocard.com.ua"
+
+# Встановлення системних утиліт
+RUN apk update && apk add --no-cache \
+        libxml2 \
+        git \
+        openssh \
+        openssl \
+        tzdata \
+        ca-certificates \
+        libc6-compat \
+        jq
+
+RUN echo "Базовий образ створено для системи Leocard (https://leocard.com.ua)" > /etc/motd
+
+# ==============================================================================
+# STAGE 2: Runtime Environment
+# ==============================================================================
+FROM python:3.11-alpine AS runtime
+
+LABEL maintainer="dev@leocard.ua"
+LABEL project="leocard.com.ua"
+LABEL description="Docker-образ середовища виконання для сервісів Leocard"
+
+# Копіюємо необхідні дані з builder stage
+COPY --from=builder /etc/motd /etc/motd
+
+# Робоча директорія
+WORKDIR /app
+
+# Копіюємо Python-залежності
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копіюємо застосунок (припустимо, це API чи вебсервіс Leocard)
+COPY . /app
+
+# Змінна оточення — таймзона Україна
+ENV TZ=Europe/Kyiv
+ENV APP_NAME="Leocard Service"
+
+# Порт, який контейнер відкриває
+EXPOSE 8080
+
+# Команда запуску
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["python", "app.py"]
+
+# Додаткове повідомлення
+RUN echo "Docker-образ створено для Leocard (https://leocard.com.ua)" > /etc/motd
+
+
 COPY . /app
 
 # 5. Порт і запуск
