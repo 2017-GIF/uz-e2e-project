@@ -231,9 +231,74 @@ ENV APP_NAME="Leocard Service"
 EXPOSE 8080
 
 # Команда запуску
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["python", "main/appy"]
-d
+ENTRYPOINT ["/sbin/tini", "-e2e-"]
+CMD import os
+import time
+import logging
+import requests
+import subprocess
+from flask import Flask
+
+logging.basicConfig(level=logging.INFO)
+
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+WHATSAPP_TO = os.getenv("WHATSAPP_TO")
+
+TARGET_PROCESS = "leocard-watchdog.exe"  # процес який моніторимо
+
+app = Flask(__name__)
+
+def send_whatsapp(message: str):
+    url = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "messaging_product": "whatsapp",
+        "to": WHATSAPP_TO,
+        "type": "text",
+        "text": {"body": message}
+    }
+    try:
+        requests.post(url, json=data, headers=headers)
+        logging.info("📨 WhatsApp повідомлення відправлено")
+    except Exception as e:
+        logging.error(f"⚠ Помилка відправки в WhatsApp: {e}")
+
+def system_check() -> bool:
+    """Повертає True якщо процес працює."""
+    try:
+        result = subprocess.run(
+            ["tasklist"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        return TARGET_PROCESS.lower() in result.stdout.lower()
+    except Exception as e:
+        logging.error(f"Помилка перевірки процесу: {e}")
+        return False
+
+@app.route("/")
+def index():
+    return "✅ Сервіс працює. Watchdog контролює процес: " + TARGET_PROCESS
+
+def watchdog():
+    logging.info("🔍 Watchdog запущено")
+    while True:
+        if not system_check():
+            logging.error("❌ Процес не працює!")
+            send_whatsapp(f"🚨 ПРОЦЕС ЗУПИНЕНО: {TARGET_PROCESS}")
+        else:
+            logging.info("✅ Процес активний")
+        time.sleep(30)
+
+if __name__ == "__main__":
+    send_whatsapp("🚀 Watchdog запущено!")
+    # Запускаємо і веб-сервер, і моніторинг паралельно
+    import threading
+    threading.Thread(target=watchdog, daemon=True).start()
+    app.run(host="0.0.0.0", port=8080)
+
 # Додаткове повідомлення
 RUN echo "Docker-образ створено для Leocard (https://leocard.com.ua)" > /etc/motd
 flask
@@ -248,4 +313,70 @@ COPY . /app
 
 # 5. Порт і запуск
 EXPOSE 8080
-CMD ["python", "app.py]
+CMDimport os
+import time
+import logging
+import requests
+import subprocess
+from flask import Flask
+
+logging.basicConfig(level=logging.INFO)
+
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+WHATSAPP_TO = os.getenv("WHATSAPP_TO")
+
+TARGET_PROCESS = "leocard-watchdog.exe"  # процес який моніторимо
+
+app = Flask(__name__)
+
+def send_whatsapp(message: str):
+    url = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "messaging_product": "whatsapp",
+        "to": WHATSAPP_TO,
+        "type": "text",
+        "text": {"body": message}
+    }
+    try:
+        requests.post(url, json=data, headers=headers)
+        logging.info("📨 WhatsApp повідомлення відправлено")
+    except Exception as e:
+        logging.error(f"⚠ Помилка відправки в WhatsApp: {e}")
+
+def system_check() -> bool:
+    """Повертає True якщо процес працює."""
+    try:
+        result = subprocess.run(
+            ["tasklist"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        return TARGET_PROCESS.lower() in result.stdout.lower()
+    except Exception as e:
+        logging.error(f"Помилка перевірки процесу: {e}")
+        return False
+
+@app.route("/")
+def index():
+    return "✅ Сервіс працює. Watchdog контролює процес: " + TARGET_PROCESS
+
+def watchdog():
+    logging.info("🔍 Watchdog запущено")
+    while True:
+        if not system_check():
+            logging.error("❌ Процес не працює!")
+            send_whatsapp(f"🚨 ПРОЦЕС ЗУПИНЕНО: {TARGET_PROCESS}")
+        else:
+            logging.info("✅ Процес активний")
+        time.sleep(30)
+
+if __name__ == "__main__":
+    send_whatsapp("🚀 Watchdog запущено!")
+    # Запускаємо і веб-сервер, і моніторинг паралельно
+    import threading
+    threading.Thread(target=watchdog, daemon=True).start()
+    main.run(host="0.0.0.0", port=8080)
+
