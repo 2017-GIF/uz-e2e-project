@@ -1,4 +1,4 @@
-mport requests
+import requests
 
 WHATSAPP_TOKEN = "ВСТАВ_ТОКЕН"
 WHATSAPP_PHONE_ID = "ВСТАВ_PHONE_ID"
@@ -232,10 +232,16 @@ EXPOSE 8080
 
 # Команда запуску
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["python", "app.py"]
-
+CMD ["python", "main/appy"]
+d
 # Додаткове повідомлення
 RUN echo "Docker-образ створено для Leocard (https://leocard.com.ua)" > /etc/motd
+flask
+requests
+git add .
+git commit -m "додав веб-сервер і спрощений Dockerfile"
+git push
+
 
 
 COPY . /app
