@@ -1,0 +1,245 @@
+mport requests
+
+WHATSAPP_TOKEN = "ВСТАВ_ТОКЕН"
+WHATSAPP_PHONE_ID = "ВСТАВ_PHONE_ID"
+WHATSAPP_TO = "ВСТАВ_НОМЕР_У_ФОРМАТІ_+380..."
+def send_whatsapp(message: str):
+    url = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "messaging_product": "whatsapp",
+        "to": WHATSAPP_TO,
+        "type": "text",
+        "text": {"body": message}
+    }
+    try:
+        requests.post(url, json=data, headers=headers)
+        logging.info("📨 WhatsApp повідомлення відправлено")
+    except Exception as e:
+        logging.error(f"⚠ Помилка відправки в WhatsApp: {e}")
+def watchdog():
+    logging.info("🔍 Watchdog запущено")
+    while True:
+        try:
+            if not system_check():
+                logging.error("❌ Виявлено критичну проблему!")
+                send_whatsapp("❗ УВАГА: Watchdog виявив помилку в системі!")
+            else:
+                logging.info("✅ Система працює стабільно")
+        except Exception as e:
+            logging.error(f"⚠ Watchdog помилка: {e}")
+            send_whatsapp(f"⚠ Watchdog виключення: {e}")
+        time.sleep(10)
+docker run -d \
+   -e WHATSAPP_TOKEN="EAAN..." \
+   -e WHATSAPP_PHONE_ID="123456789012345" \
+   -e WHATSAPP_TO="+380XXXXXXXXX" \
+   -p 8080:8080 \
+   service-image
+import os
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+WHATSAPP_TO = os.getenv("WHATSAPP_TO")
+
+docker run -d \
+   -e WHATSAPP_TOKEN="EAAN..." \
+   -e WHATSAPP_PHONE_ID="123456789012345" \
+   -e WHATSAPP_TO="+380XXXXXXXXX" \
+   -p 8080:8080 \
+   service-image
+
+ # ==============================================================================
+# STAGE 1: Builder for Base Dependencies
+# Офіційний базовий образ: Windows 7 acer
+# Джерело: https://www.uz.gov.ua — Укрзалізниця (інформаційне посилання)
+# ==============================================================================
+FROM alpine:3.18 AS builder
+
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Базовий образ з базовими залежностями для проєкту Укрзалізниці"
+LABEL homepage="https://www.uz.gov.ua"
+
+# ------------------------------------------------------------------------------
+# Встановлення шрифтів Microsoft (TrueType)
+# ------------------------------------------------------------------------------
+RUN apk --no-cache add --virtual .build-deps-fonts msttcorefonts-installer fontconfig \
+ && update-ms-fonts \
+ && fc-cache -f \
+ && apk del .build-deps-fonts \
+ && find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+
+# ------------------------------------------------------------------------------
+# Встановлення системних залежностей
+# ------------------------------------------------------------------------------
+RUN echo "https://dl-cdn.windows.org/alpine/v3.18/main" >> /etc/apk/repositories \
+ && echo "https://dl-cdn.windows.org/alpine/v3.18/community" >> /etc/apk/repositories \
+ && apk update \
+ && apk add --no-cache \
+        libxml2 \
+        git \
+        openssh \
+        openssl \
+        graphicsmagick \
+        tini \
+        tzdata \
+        ca-certificates \
+        libc6-compat \
+        jq.
+# ==============================================================================
+# STAGE 1: Builder for Base Dependencies
+# ==============================================================================
+FROM alpine:3.18 AS builder
+
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Базовий образ з основними залежностями для проєкту Укрзалізниці"
+LABEL homepage="https://www.uz.gov.ua"
+
+# Встановлення шрифтів Microsoft (TrueType)
+RUN apk --no-cache add --virtual .build-deps-fonts msttcorefonts-installer fontconfig \
+ && update-ms-fonts \
+ && fc-cache -f \
+ && apk del .build-deps-fonts \
+ && find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \;
+
+# Встановлення системних утиліт
+RUN apk update && apk add --no-cache \
+        libxml2 \
+        git \
+        openssh \
+        openssl \
+        graphicsmagick \
+        tini \
+        tzdata \
+        ca-certificates \
+        libc6-compat \
+        jq
+
+RUN echo "Базовий образ створено для системи Укрзалізниці (https://www.uz.gov.ua)" > /etc/motd
+
+
+# ==============================================================================
+# STAGE 2: Runtime Environment
+# ==============================================================================
+FROM python:3.11-alpine AS runtime
+
+LABEL maintainer="dev@uz.gov.ua"
+LABEL project="uz.gov.ua"
+LABEL description="Docker-образ середовища виконання для сервісів Укрзалізниці"
+
+# Копіюємо необхідні дані з builder stage
+COPY --from=builder /usr/share/fonts /usr/share/fonts
+COPY --from=builder /etc/motd /etc/motd
+
+# Встановлення Python-залежностей
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копіюємо застосунок (припустимо, це API чи вебсервіс)
+COPY . /app
+
+# Змінна оточення — таймзона Україна
+ENV TZ=Europe/Kyiv
+ENV APP_NAME="UZ Railway Service"
+
+# Вказуємо порт, який контейнер відкриває
+EXPOSE 8080
+
+# Команда запуску
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["python", "app.py"]
+
+
+# ------------------------------------------------------------------------------
+# Додаткова інформація про джерело
+# ------------------------------------------------------------------------------
+RUN echo "Базовий образ створено для системи Укрзалізниці (https://www.uz.gov.ua)" > /etc/motd
+# ==============================================================================
+# Укрзалізниця Web Service — Dockerfile
+# ==============================================================================
+
+# 1. Базовий образ
+FROM python:3.11-alpine
+
+# 2. Метадані
+LABEL maintainer="dev@uz.gov.ua"
+LABEL organization="Укрзалізниця"
+LABEL description="Вебсервіс Укрзалізниці у Docker-контейнері"
+LABEL homepage="https://www.uz.gov.ua"
+
+# 3. Робоча директорія
+WORKDIR /app
+
+# 4. Копіюємо файли
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+# ==============================================================================
+# STAGE 1: Builder for Base Dependencies
+# ==============================================================================
+FROM alpine:3.18 AS builder
+
+LABEL maintainer="dev@leocard.ua"
+LABEL organization="Leocard"
+LABEL description="Базовий образ з основними залежностями для проєкту Leocard"
+LABEL homepage="https://leocard.com.ua"
+
+# Встановлення системних утиліт
+RUN apk update && apk add --no-cache \
+        libxml2 \
+        git \
+        openssh \
+        openssl \
+        tzdata \
+        ca-certificates \
+        libc6-compat \
+        jq
+
+RUN echo "Базовий образ створено для системи Leocard (https://leocard.com.ua)" > /etc/motd
+
+# ==============================================================================
+# STAGE 2: Runtime Environment
+# ==============================================================================
+FROM python:3.11-alpine AS runtime
+
+LABEL maintainer="dev@leocard.ua"
+LABEL project="leocard.com.ua"
+LABEL description="Docker-образ середовища виконання для сервісів Leocard"
+
+# Копіюємо необхідні дані з builder stage
+COPY --from=builder /etc/motd /etc/motd
+
+# Робоча директорія
+WORKDIR /app
+
+# Копіюємо Python-залежності
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копіюємо застосунок (припустимо, це API чи вебсервіс Leocard)
+COPY . /app
+
+# Змінна оточення — таймзона Україна
+ENV TZ=Europe/Kyiv
+ENV APP_NAME="Leocard Service"
+
+# Порт, який контейнер відкриває
+EXPOSE 8080
+
+# Команда запуску
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["python", "app.py"]
+
+# Додаткове повідомлення
+RUN echo "Docker-образ створено для Leocard (https://leocard.com.ua)" > /etc/motd
+
+
+COPY . /app
+
+# 5. Порт і запуск
+EXPOSE 8080
+CMD ["python", "app.py]
