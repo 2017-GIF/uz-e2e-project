@@ -1,0 +1,52 @@
+import requests
+
+WHATSAPP_TOKEN = "ВСТАВ_ТОКЕН"
+WHATSAPP_PHONE_ID = "ВСТАВ_PHONE_ID"
+WHATSAPP_TO = "ВСТАВ_НОМЕР_У_ФОРМАТІ_+380..."
+def send_whatsapp(message: str):
+    url = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "messaging_product": "whatsapp",
+        "to": WHATSAPP_TO,
+        "type": "text",
+        "text": {"body": message}
+    }
+    try:
+        requests.post(url, json=data, headers=headers)
+        logging.info("📨 WhatsApp повідомлення відправлено")
+    except Exception as e:
+        logging.error(f"⚠ Помилка відправки в WhatsApp: {e}")
+def watchdog():
+    logging.info("🔍 Watchdog запущено")
+    while True:
+        try:
+            if not system_check():
+                logging.error("❌ Виявлено критичну проблему!")
+                send_whatsapp("❗ УВАГА: Watchdog виявив помилку в системі!")
+            else:
+                logging.info("✅ Система працює стабільно")
+        except Exception as e:
+            logging.error(f"⚠ Watchdog помилка: {e}")
+            send_whatsapp(f"⚠ Watchdog виключення: {e}")
+        time.sleep(10)
+docker run -d \
+   -e WHATSAPP_TOKEN="EAAN..." \
+   -e WHATSAPP_PHONE_ID="123456789012345" \
+   -e WHATSAPP_TO="+380XXXXXXXXX" \
+   -p 8080:8080 \
+   service-image
+import os
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+WHATSAPP_TO = os.getenv("WHATSAPP_TO")
+
+docker run -d \
+   -e WHATSAPP_TOKEN="EAAN..." \
+   -e WHATSAPP_PHONE_ID="123456789012345" \
+   -e WHATSAPP_TO="+380XXXXXXXXX" \
+   -p 8080:8080 \
+   service-image
