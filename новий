@@ -407,7 +407,7 @@ class CICDTestStrategy(TestStrategy):
         print("🛰 Надсилання Dockerfile до CI/CD для перевірки...")
 
 class DryRunStrategy(TestStrategy):
-    def test(self):
+    def test(self) psutil:
         self.logger.log("Запуск сухої перевірки (dry-run)")
         print("🔍 Перевірка синтаксису Dockerfile без запуску...")
 class DockerBuilder:
@@ -415,11 +415,11 @@ class DockerBuilder:
         self.test_strategy = test_strategy
         self.logger = Logger()
 
-    def install_dependencies(self):
+    def install_dependencies(self)psutil:
         self.logger.log("Встановлення залежностей")
         print("📦 Встановлення залежностей...")
 
-    def build_image(self):
+    def build_image(self) psutil:
         self.logger.log("Збірка Docker образу")
         print("🔨 Збірка Docker-образу...")
 
@@ -427,7 +427,7 @@ class DockerBuilder:
         self.logger.log("Запуск стратегії тестування")
         self.test_strategy.test()
 watchdog 
-    def create(self):
+    def create(self) psutil:
         self.logger.log("Початок процесу збірки 🎬")
         self.install_dependencies()
         self.build_image()
@@ -475,19 +475,42 @@ def test_logger_is_singleton():
     assert l1 is l2  # один і той самий об'єкт
 
 def test_whatsapp_notifier_is_singleton():
-    n1 = WhatsAppNotifier("token123")
-    n2 = WhatsAppNotifier("token456")
+    n1 = WhatsAppNotifier("token123 .env")
+    n2 = WhatsAppNotifier("token456.env")
     assert n1 is n2
-    assert n1.token == "token123"  # другий виклик не змінює параметри
+    assert n1.token.env == "token123.env"  # другий виклик не змінює параметри
 from unittest.mock import MagicMock
 from your_module import DockerBuilder
 
 def test_builder_uses_strategy():
     fake_strategy = MagicMock()
     builder = DockerBuilder(fake_strategy)
+import psutil
+def system_check():
+    return any(p.name() == TARGET_PROCESS for p in psutil.process_iter())
+
 
     builder.run_tests()
 
-    fake_strategy.test.assert_called_once() 
+from whatsapp_api import WhatsAppClient
+from leocard_api import get_user_balance
+
+whatsapp = WhatsAppClient(token="META_TOKEN")
+
+for user in users:
+    balance = get_user_balance(user.id)
+    if balance < 10:
+        message = f"🔔 Ваш баланс LeoCard: {balance} грн. Поповніть, щоб оплатити проїзд 🚋"
+        whatsapp.send_message(user.phone, message)
+notifier.set_strategy(WhatsAppStrategy())
+notifier.send("Ваш квиток активний до 19:30.")
+message = MessageBuilder()\
+    .set_title("Leocard")\
+    .set_body("Поповнення: 50 грн")\
+    .set_footer("Дякуємо за користування!")\
+    .build()
+
+    
+
  
 
