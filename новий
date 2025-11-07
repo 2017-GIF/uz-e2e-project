@@ -379,4 +379,115 @@ if __name__ == "__main__":
     import threading
     threading.Thread(target=watchdog, daemon=True).start()
     main.run(host="0.0.0.0", port=8080)
+class Logger:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def log(self, message):
+        print(f"[LOG] {message}")
+class TestStrategy:
+    def __init__(self):
+        self.logger = Logger()
+
+    def test(self):
+        raise NotImplementedError
+
+class LocalTestStrategy(TestStrategy):
+    def test(self):
+        self.logger.log("Запуск локального тестування")
+        print("✅ Перевірка Dockerfile локально...")
+
+class CICDTestStrategy(TestStrategy):
+    def test(self):
+        self.logger.log("Запуск перевірки через CI/CD")
+        print("🛰 Надсилання Dockerfile до CI/CD для перевірки...")
+
+class DryRunStrategy(TestStrategy):
+    def test(self):
+        self.logger.log("Запуск сухої перевірки (dry-run)")
+        print("🔍 Перевірка синтаксису Dockerfile без запуску...")
+class DockerBuilder:
+    def __init__(self, test_strategy: TestStrategy):
+        self.test_strategy = test_strategy
+        self.logger = Logger()
+
+    def install_dependencies(self):
+        self.logger.log("Встановлення залежностей")
+        print("📦 Встановлення залежностей...")
+
+    def build_image(self):
+        self.logger.log("Збірка Docker образу")
+        print("🔨 Збірка Docker-образу...")
+
+    def run_tests(self):
+        self.logger.log("Запуск стратегії тестування")
+        self.test_strategy.test()
+watchdog 
+    def create(self):
+        self.logger.log("Початок процесу збірки 🎬")
+        self.install_dependencies()
+        self.build_image()
+        self.run_tests()
+        self.logger.log("Збірка завершена ✅")
+        print("✅ Готово!")
+choice = input("Оберіть спосіб перевірки (local / ci / dry): ")
+
+if choice == "local":
+    strategy = LocalTestStrategy()
+elif choice == "ci":
+    strategy = CICDTestStrategy()
+else:
+    strategy = DryRunStrategy()
+
+builder = DockerBuilder(strategy)
+builder.create()
+import time 
+from io import StringIO
+from unittest.mock import patch
+from your_module import LocalTestStrategy, CICDTestStrategy, DryRunStrategy
+
+def test_local_strategy_output():
+    strategy = LocalTestStrategy()
+    with patch('sys.stdout', new=StringIO()) as fake_out:
+        strategy.test()
+        assert "локально" in fake_out.getvalue()
+
+def test_cicd_strategy_output():
+    strategy = CICDTestStrategy()
+    with patch('sys.stdout', new=StringIO()) as fake_out:
+        strategy.test()
+        assert "CI/CD" in fake_out.getvalue()
+
+def test_dry_run_strategy_output():
+    strategy = DryRunStrategy()
+    with patch('sys.stdout', new=StringIO()) as fake_out:
+        strategy.test()
+        assert "синтаксису" in fake_out.getvalue()
+from your_module import Logger, WhatsAppNotifier
+
+def test_logger_is_singleton():
+    l1 = Logger()
+    l2 = Logger()
+    assert l1 is l2  # один і той самий об'єкт
+
+def test_whatsapp_notifier_is_singleton():
+    n1 = WhatsAppNotifier("token123")
+    n2 = WhatsAppNotifier("token456")
+    assert n1 is n2
+    assert n1.token == "token123"  # другий виклик не змінює параметри
+from unittest.mock import MagicMock
+from your_module import DockerBuilder
+
+def test_builder_uses_strategy():
+    fake_strategy = MagicMock()
+    builder = DockerBuilder(fake_strategy)
+
+    builder.run_tests()
+
+    fake_strategy.test.assert_called_once() 
+ 
 
